@@ -1,36 +1,30 @@
 #include <Arduino.h>
-#include <Adafruit_Sensor.h>
-#include <DHT.h>
+#include <WiFi.h>
+#include <WebServer.h>
+#include <Adafruit_Sensor.h> 
 
-// Définition du capteur
-#define DHTPIN 19        // Broche où est connecté le DHT22
-#define DHTTYPE DHT22   // Type de capteur
+const char *ssid = "BORNE_WIFI";
+const char *password = "12345678";
 
-DHT dht(DHTPIN, DHTTYPE);
+WebServer server(80);
+
+void handleTemperature() {
+    float temperature = 25.6; // Simulation d'une valeur de température
+    server.send(200, "application/json", "{\"temperature\": " + String(temperature) + "}");
+}
 
 void setup() {
-    Serial.begin(9600);  // Initialisation de la communication série
-    Serial.println("Initialisation du capteur DHT22...");
-    dht.begin();
+    Serial.begin(9600);
+    WiFi.softAP(ssid, password);
+    Serial.println("Point d'accès WiFi activé !");
+    Serial.print("Adresse IP: ");
+    Serial.println(WiFi.softAPIP());
+
+    server.on("/temperature", handleTemperature);
+    server.begin();
+    Serial.println("Serveur HTTP démarré.");
 }
 
 void loop() {
-    float temperature = dht.readTemperature(); // Lecture de la température en °C
-    float humidite = dht.readHumidity(); // Lecture de l'humidité en %
-
-    if (isnan(temperature) || isnan(humidite)) {
-        Serial.println("Échec de lecture du DHT22 !");// affichage d'une erreur de lecture
-        return;
-    }
-
-    Serial.print("Température: ");
-    Serial.print(temperature);//écriture de la température
-    Serial.println(" °C");
-
-    Serial.print("Humidité: ");
-    Serial.print(humidite); //écriture de l'humidité
-    Serial.println(" %");
-
-    Serial.println("--------------------");
-    delay(2000);  // Attente avant la prochaine lecture
+    server.handleClient();
 }
