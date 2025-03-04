@@ -1,30 +1,30 @@
 #include <Arduino.h>
+#include <Adafruit_Sensor.h>
 #include <WiFi.h>
 #include <WebServer.h>
-#include <Adafruit_Sensor.h> 
 
-const char *ssid = "BORNE_WIFI";
-const char *password = "12345678";
+// Parameters
+const int ilsPin = 21;
 
-WebServer server(80);
+// Variables
+bool ilsStatus = false;
 
-void handleTemperature() {
-    float temperature = 25.6; // Simulation d'une valeur de température
-    server.send(200, "application/json", "{\"temperature\": " + String(temperature) + "}");
+void readReedSwitch() {
+    // Test routine for ReedSwitch
+    ilsStatus = digitalRead(ilsPin);
+    Serial.println(ilsStatus);
+    delay(100);
 }
 
 void setup() {
+    // Init Serial USB
     Serial.begin(9600);
-    WiFi.softAP(ssid, password);
-    Serial.println("Point d'accès WiFi activé !");
-    Serial.print("Adresse IP: ");
-    Serial.println(WiFi.softAPIP());
-
-    server.on("/temperature", handleTemperature);
-    server.begin();
-    Serial.println("Serveur HTTP démarré.");
+    Serial.println("Initialize System");
+    
+    // Init digital input
+    pinMode(ilsPin, INPUT);
 }
 
 void loop() {
-    server.handleClient();
+    readReedSwitch();
 }
