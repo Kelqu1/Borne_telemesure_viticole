@@ -3,28 +3,31 @@
 #include <WiFi.h>
 #include <WebServer.h>
 
-// Parameters
+// Parametertes du montage
 const int ilsPin = 21;
 
 // Variables
-bool ilsStatus = false;
+int pluie= 0;
 
-void readReedSwitch() {
-    // Test routine for ReedSwitch
-    ilsStatus = digitalRead(ilsPin);
-    Serial.println(ilsStatus);
-    delay(100);
+void IRAM_ATTR handleInterrupt() {  //s'execute dés que l'état de l'ILS passe de 0 à 1
+    // ajoute 1 à la variable pluie
+    pluie++;
 }
 
 void setup() {
-    // Init Serial USB
+    // mise en place de la liason série
     Serial.begin(9600);
-    Serial.println("Initialize System");
-    
-    // Init digital input
+    Serial.println("systeme initialisé");
+
     pinMode(ilsPin, INPUT);
+    // définir l'interruption 
+    attachInterrupt(digitalPinToInterrupt(ilsPin), handleInterrupt, RISING);
 }
 
-void loop() {
-    readReedSwitch();
+void loop()   
+{
+    //affichage de la variable
+    Serial.print("niveau de la pluie : ");
+    Serial.println(pluie);
+    delay(10);
 }
