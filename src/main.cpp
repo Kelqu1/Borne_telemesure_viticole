@@ -1,33 +1,35 @@
 #include <Arduino.h>
 #include <Adafruit_Sensor.h>
 #include <WiFi.h>
-#include <WebServer.h>
+#include <ESPAsyncWebServer.h>
 
-// Parametertes du montage
-const int ilsPin = 21;
-
-// Variables
-int pluie= 0;
-
-void IRAM_ATTR handleInterrupt() {  //s'execute dés que l'état de l'ILS passe de 0 à 1
-    // ajoute 1 à la variable pluie
-    pluie++;
-}
+AsyncWebServer server(80);
+//debut code de yanis
+const char *ssid = "BORNE_WIFI";
+const char *password = "12345678";
 
 void setup() {
-    // mise en place de la liason série
+   
     Serial.begin(9600);
-    Serial.println("systeme initialisé");
+    WiFi.softAP(ssid, password);
+    Serial.println("Point d'accès WiFi activé !");
+    Serial.print("Adresse IP: ");
+    Serial.println(WiFi.softAPIP());
+    //fin code de yanis
+  
+    //requete pour tester si L'API est on
+    server.on("/status", HTTP_GET, [](AsyncWebServerRequest *request){
+        String response = "{\"status\": \"ok\", \"ip\": \"" + WiFi.softAPIP().toString() + "\"}";
+        request->send(200, "application/json", response); 
+    });
+     
+    //requete pour avoir la température
+    server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest *request){
+        float temperature = 25.60; 
+        String response = "{\"temperature\": " + String(temperature, 2) + "}";
+        request->send(200, "application/json", response);
+    });
 
-    pinMode(ilsPin, INPUT);
-    // définir l'interruption 
-    attachInterrupt(digitalPinToInterrupt(ilsPin), handleInterrupt, RISING);
-}
-
-void loop()   
-{
-    //affichage de la variable
-    Serial.print("niveau de la pluie : ");
-    Serial.println(pluie);
-    delay(10);
+    server.begin();
+    Serial.println("Serveur Web démarré !");
 }
