@@ -35,10 +35,8 @@ void setup() {
     server.begin();
 
     //mise en forme des informations utile dans le terminal
-    Serial.print("adresse de l'api :");
-    Serial.print(WiFi.softAPIP());
-    Serial.println("pour le status de l'api : /status");
-    Serial.println("pour la temperature     : /temperature");
+    Serial.println("status de l'api : /status");
+    Serial.println("temperature     : /temperature");
     Serial.println("Serveur Web au port 200");
 }
 
