@@ -1,5 +1,7 @@
-#include <Arduino.h>
+//fin de la phase de prototypage 
+//et debut de la phase de developpement
 
+#include <Arduino.h>
 #define tension_ref 3.3f //tension de reférence pour l'ESP32
 #define nb_etat_max 4096.0 //nombre d'état numérique possible pour un converstisseur 12 bits
 #define ratio_pont_diviseur 4.343f
