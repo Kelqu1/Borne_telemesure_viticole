@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
+#include <WiFi.h>
+#include <ESPAsyncWebServer.h>
 
 // CAPTEUR HUMI+TEMP parametres
 #define DHTPIN 19        // Broche où est branché le DHT22
@@ -11,10 +13,45 @@
 #define nb_etat_max 4096.0f //nombre d'état numérique possible pour un converstisseur 12 bits
 #define tensionPin 34 // Broche où est conecté le pont diviseur
 
+//debut code de yanis
+const char *ssid = "BORNE_WIFI";
+const char *password = "12345678";
+
 DHT dht(DHTPIN, DHTTYPE);
+AsyncWebServer server(80);
 
 void setup() {
-    Serial.begin(9600);  // Initialisation de la communication série
+    Serial.begin(9600);
+    WiFi.softAP(ssid, password);
+    Serial.println("Point d'accès WiFi activé !");
+    Serial.print("Adresse IP: ");
+    Serial.println(WiFi.softAPIP());
+    //fin code de yanis
+    //debut code hugo
+
+    //API DEFINITION
+
+    //requete pour tester si L'API est activé
+    server.on("/status", HTTP_GET, [](AsyncWebServerRequest *request){
+        String response = "{\"status\": \"ok\", \"ip\": \"" + WiFi.softAPIP().toString() + "\"}";
+        request->send(200, "application/json", response); 
+    });
+         
+    //requete pour avoir la température
+    server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest *request){
+        float temperature = 25.60; 
+        String response = "{\"temperature\": " + String(temperature, 2) + "}";
+        request->send(200, "application/json", response);
+    });
+    
+    //démarage du serveur
+    server.begin();
+    
+    //mise en forme des informations utile dans le terminal
+    Serial.println("status de l'api : /status");
+    Serial.println("temperature     : /temperature");
+    Serial.println("Serveur Web au port 200");
+
     dht.begin();
     Serial.println("Initialisation de la borne de télémesure");
 }
