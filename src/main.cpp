@@ -16,18 +16,25 @@
 //déclaration des variables météo
 float temperature;
 float humidite;
-int compteurPluie= 0;
+float quantite_pluie;
 //pourcentage batterie à ajouter
+
+int compteurPluie=0;
 
 //parametres
 DHT dht(DHTPIN, DHTTYPE);
 AsyncWebServer server(80);//serveur HTTP au port 80
 
 //INTERUPTION CAPTEUR PLUVOIMETRIE
+int lastMillis = 0;
+unsigned long previousMillis = 0;
 
 void IRAM_ATTR handleInterrupt() {  //s'execute dés que l'état de l'I.L.S passe de 0 à 1
-    // ajoute 1 à la variable pluie
-    compteurPluie++;
+
+    if(millis() - lastMillis > 250){ // Software debouncing buton
+        compteurPluie++;
+    lastMillis = millis();
+    }
 }
 
 //debut code de yanis
@@ -57,10 +64,8 @@ void setup() {
     });
          
     //requete pour avoir la température
-    server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest *request){
-        temperature;
-        humidite;
-        String response = "{\"temperature\": " + String(temperature, 2) + ", \"humidite\": " + String(humidite, 2) + "}";
+    server.on("/Mesures", HTTP_GET, [](AsyncWebServerRequest *request){
+        String response = "{\"temperature\": " + String(temperature, 2) + ", \"humidite\": " + String(humidite, 2) + ", \"pluviometrie\": " + String(quantite_pluie, 2) + "\"}";
         request->send(200, "application/json", response);
     });
     
@@ -80,11 +85,17 @@ void setup() {
 }
 
 void loop() {
+    //mise à jour 
+    lastMillis = millis();
 
     //NIVEAU BATTERIE
     
     int valeur_brute=  analogRead(tensionPin); // Lecture de la valeur analogique
     float Tension_GPIO = (valeur_brute / nb_etat_max) * tension_ref +0.3 ;// cacul tension avec une  
+
+    //PLUVIOMETRIE
+
+    quantite_pluie = compteurPluie*0.25;
      
     //CAPTEUR HUMIDITé ET TEMPERATURE
 
@@ -112,8 +123,9 @@ void loop() {
     Serial.println(" %");
 
     Serial.print("compteur pluie: ");
-    Serial.println(compteurPluie);
+    Serial.print(quantite_pluie);
+    Serial.println(" mm");
 
     Serial.println("-----------------------------");
-    delay(200);
+    delay(1000);
 }
