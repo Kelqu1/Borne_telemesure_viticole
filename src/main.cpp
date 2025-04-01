@@ -16,16 +16,23 @@
 //déclaration des variables météo
 float temperature;
 float humidite;
+int compteurPluie= 0;
 //pourcentage batterie à ajouter
 
 //parametres
 DHT dht(DHTPIN, DHTTYPE);
 AsyncWebServer server(80);//serveur HTTP au port 80
 
+//INTERUPTION CAPTEUR PLUVOIMETRIE
+
+void IRAM_ATTR handleInterrupt() {  //s'execute dés que l'état de l'I.L.S passe de 0 à 1
+    // ajoute 1 à la variable pluie
+    compteurPluie++;
+}
+
 //debut code de yanis
 const char *ssid = "BORNE_WIFI";
 const char *password = "12345678";
-
 
 void setup() {
     Serial.begin(9600);
@@ -35,6 +42,11 @@ void setup() {
     Serial.println(WiFi.softAPIP());
     //fin code de yanis
     //debut code hugo
+
+    //CAPTEUR PLUVIOMETRIE
+
+    // définir l'interruption 
+    attachInterrupt(digitalPinToInterrupt(21), handleInterrupt, RISING);
 
     //PARTIE API 
 
@@ -68,6 +80,7 @@ void setup() {
 }
 
 void loop() {
+
     //NIVEAU BATTERIE
     
     int valeur_brute=  analogRead(tensionPin); // Lecture de la valeur analogique
@@ -98,6 +111,9 @@ void loop() {
     Serial.print(humidite);
     Serial.println(" %");
 
+    Serial.print("compteur pluie: ");
+    Serial.println(compteurPluie);
+
     Serial.println("-----------------------------");
-    delay(500);
+    delay(200);
 }
