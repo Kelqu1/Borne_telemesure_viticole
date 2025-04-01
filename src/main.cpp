@@ -8,17 +8,24 @@
 #define DHTPIN 19        // Broche où est branché le DHT22
 #define DHTTYPE DHT22   // Type de capteur
 
-// CAPTEUR NIVEAU TENSION
+//NIVEAU TENSION
 #define tension_ref 3.3f //tension de reférence pour l'ESP32
 #define nb_etat_max 4096.0f //nombre d'état numérique possible pour un converstisseur 12 bits
 #define tensionPin 34 // Broche où est conecté le pont diviseur
+
+//déclaration des variables météo
+float temperature;
+float humidite;
+//pourcentage batterie à ajouter
+
+//parametres
+DHT dht(DHTPIN, DHTTYPE);
+AsyncWebServer server(80);//serveur HTTP au port 80
 
 //debut code de yanis
 const char *ssid = "BORNE_WIFI";
 const char *password = "12345678";
 
-DHT dht(DHTPIN, DHTTYPE);
-AsyncWebServer server(80);
 
 void setup() {
     Serial.begin(9600);
@@ -29,7 +36,7 @@ void setup() {
     //fin code de yanis
     //debut code hugo
 
-    //API DEFINITION
+    //PARTIE API 
 
     //requete pour tester si L'API est activé
     server.on("/status", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -39,31 +46,38 @@ void setup() {
          
     //requete pour avoir la température
     server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest *request){
-        float temperature = 25.60; 
-        String response = "{\"temperature\": " + String(temperature, 2) + "}";
+        temperature;
+        humidite;
+        String response = "{\"temperature\": " + String(temperature, 2) + ", \"humidite\": " + String(humidite, 2) + "}";
         request->send(200, "application/json", response);
     });
     
-    //démarage du serveur
+    //démarage du serveur HTTP
     server.begin();
     
-    //mise en forme des informations utile dans le terminal
+    //affichage des informations de l'API
     Serial.println("status de l'api : /status");
     Serial.println("temperature     : /temperature");
     Serial.println("Serveur Web au port 200");
 
+    //fin du code sur l'API
+
     dht.begin();
-    Serial.println("Initialisation de la borne de télémesure");
+    Serial.println("initisalisation terminé");
+    Serial.println("-----------------------------");
 }
 
 void loop() {
-    //CAPTEUR NIVEAU BATTERIE
+    //NIVEAU BATTERIE
+    
     int valeur_brute=  analogRead(tensionPin); // Lecture de la valeur analogique
     float Tension_GPIO = (valeur_brute / nb_etat_max) * tension_ref +0.3 ;// cacul tension avec une  
      
     //CAPTEUR HUMIDITé ET TEMPERATURE
-    float temperature = dht.readTemperature(); // Lecture de la température en °C
-    float humidite = dht.readHumidity(); // Lecture de l'humidité en %
+
+    // Lecture de la température en °C
+    temperature = dht.readTemperature(); // Lecture de la température en °C
+    humidite = dht.readHumidity(); // Lecture de l'humidité en %
 
     //affichage d'une erreur pour le DHT au besoin 
     if (isnan(temperature) || isnan(humidite)) {
@@ -73,17 +87,17 @@ void loop() {
 
     // Affichage des valeurs dans le moniteur série
     Serial.print("Tension entrée ESP32: ");
-    Serial.print(Tension_GPIO); //ecriture tension
+    Serial.print(Tension_GPIO);
     Serial.println(" V");
 
     Serial.print("Température: ");
-    Serial.print(temperature);//écriture de la température
+    Serial.print(temperature);
     Serial.println(" °C");
 
     Serial.print("Humidité: ");
-    Serial.print(humidite); //écriture de l'humidité
+    Serial.print(humidite);
     Serial.println(" %");
 
     Serial.println("-----------------------------");
-    delay(1000);  // Attente avant les prochaines lectures
+    delay(500);
 }
