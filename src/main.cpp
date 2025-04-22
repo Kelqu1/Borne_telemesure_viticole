@@ -4,8 +4,8 @@
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
 
-// CAPTEUR HUMI+TEMP parametres
-#define DHTPIN 19        // Broche où est branché le DHT22
+//CAPTEUR HUMIDITé et TEMPéRATURE
+#define DHTPIN 19       // Broche où est branché le DHT22
 #define DHTTYPE DHT22   // Type de capteur
 
 //NIVEAU TENSION
@@ -17,8 +17,7 @@
 float temperature;
 float humidite;
 float quantite_pluie;
-
-//pourcentage batterie à ajouter
+float pourcentage_batterie;
 int compteurPluie=0;
 
 //parametres
@@ -87,13 +86,13 @@ void setup() {
     //PARTIE API 
 
     //requete pour tester si L'API est activé
-    server.on("/status", HTTP_GET, [](AsyncWebServerRequest *request){
+    server.on("/status", HTTP_POST, [](AsyncWebServerRequest *request){
         String response = "{\"status\": \"ok\", \"ip\": \"" + WiFi.softAPIP().toString() + "\"}";
         request->send(200, "application/json", response); 
     });
          
     //requete pour avoir la température
-    server.on("/Mesures", HTTP_GET, [](AsyncWebServerRequest *request){
+    server.on("/Mesures", HTTP_POST, [](AsyncWebServerRequest *request){
         String response = "{\"temperature\": " + String(temperature, 2) + ", \"humidite\": " + String(humidite, 2) + ", \"pluviometrie\": " + String(quantite_pluie, 2) + "\"}";
         request->send(200, "application/json", response);
     });
@@ -108,7 +107,7 @@ void setup() {
 
     //fin du code sur l'API
 
-    dht.begin();
+    dht.begin(); 
     Serial.println("initisalisation terminé");
     Serial.println("-----------------------------");
 }
@@ -122,7 +121,7 @@ void loop() {
     int valeur_brute=  analogRead(tensionPin); // Lecture de la valeur analogique
     float Tension_GPIO = (valeur_brute / nb_etat_max) * tension_ref +0.8 ;// cacul tension avec un décalage
     float Tension_batterie=Tension_GPIO*3.443;
-    float pourcentage_batterie=tensionversPourcentage(Tension_batterie);
+    pourcentage_batterie=tensionversPourcentage(Tension_batterie);
 
     //PLUVIOMETRIE
 
@@ -161,7 +160,7 @@ void loop() {
     Serial.print(humidite);
     Serial.println(" %");
 
-    Serial.print("compteur pluie: ");
+    Serial.print("pluviométrie: ");
     Serial.print(quantite_pluie);
     Serial.println(" mm");
 
