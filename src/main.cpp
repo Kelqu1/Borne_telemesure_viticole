@@ -10,15 +10,15 @@
 
 //NIVEAU TENSION
 #define tension_ref 3.3f //tension de reférence pour l'ESP32
-#define nb_etat_max 4096.0f //nombre d'état numérique possible pour un converstisseur 12 bits
+#define nb_etat_max 4096.0 //nombre d'état numérique possible pour un converstisseur 12 bits
 #define tensionPin 34 // Broche où est conecté le pont diviseur
 
 //déclaration des variables météo
 float temperature;
 float humidite;
 float quantite_pluie;
-//pourcentage batterie à ajouter
 
+//pourcentage batterie à ajouter
 int compteurPluie=0;
 
 //parametres
@@ -31,11 +31,40 @@ unsigned long previousMillis = 0;
 
 void IRAM_ATTR handleInterrupt() {  //s'execute dés que l'état de l'I.L.S passe de 0 à 1
 
-    if(millis() - lastMillis > 250){ // Software debouncing buton
-        compteurPluie++;
+    if(millis() - lastMillis > 250){ // code anti-rebond
+        compteurPluie++; // ajoute 1 la variable
     lastMillis = millis();
     }
 }
+
+//code convertisseur de tension en pourcentage
+float tensionversPourcentage(float tension) {
+    const int N = 11;
+    //tableau des référecences 
+    float tensions[N] = {12.89, 12.78, 12.65, 12.51, 12.41, 12.23, 12.11, 11.96, 11.81, 11.70, 11.63};
+    float pourcentages[N] = {100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 0};
+  
+    //cas Au-dessus ou en-dessous des bornes de départ
+    if (tension >= tensions[0]) return 100;
+    if (tension <= tensions[N - 1]) return 0;
+  
+    // Chercher dans quel intervalle se trouve la tension
+    for (int i = 0; i < N - 1; i++) {
+      float v1 = tensions[i];
+      float v2 = tensions[i + 1];
+  
+      if (tension <= v1 && tension >= v2) {
+        float p1 = pourcentages[i];
+        float p2 = pourcentages[i + 1];
+  
+        // linéarisation dans l’intervalle [v2, v1]
+        float pourcent = p1 + (p2 - p1) * (tension - v1) / (v2 - v1);
+        return pourcent;
+      }
+    }
+  
+    return -1; // en cas d'erreur
+  }
 
 //debut code de yanis
 const char *ssid = "BORNE_WIFI";
@@ -74,7 +103,7 @@ void setup() {
     
     //affichage des informations de l'API
     Serial.println("status de l'api : /status");
-    Serial.println("temperature     : /temperature");
+    Serial.println("temperature     : /Mesures");
     Serial.println("Serveur Web au port 200");
 
     //fin du code sur l'API
@@ -85,20 +114,22 @@ void setup() {
 }
 
 void loop() {
-    //mise à jour 
+    //mise à jour de la variable du code anti rebond du capteur de pluviométrie
     lastMillis = millis();
 
     //NIVEAU BATTERIE
     
     int valeur_brute=  analogRead(tensionPin); // Lecture de la valeur analogique
-    float Tension_GPIO = (valeur_brute / nb_etat_max) * tension_ref +0.3 ;// cacul tension avec une  
+    float Tension_GPIO = (valeur_brute / nb_etat_max) * tension_ref +0.8 ;// cacul tension avec un décalage
+    float Tension_batterie=Tension_GPIO*3.443;
+    float pourcentage_batterie=tensionversPourcentage(Tension_batterie);
 
     //PLUVIOMETRIE
 
     quantite_pluie = compteurPluie*0.25;
      
     //CAPTEUR HUMIDITé ET TEMPERATURE
-
+    
     // Lecture de la température en °C
     temperature = dht.readTemperature(); // Lecture de la température en °C
     humidite = dht.readHumidity(); // Lecture de l'humidité en %
@@ -113,6 +144,14 @@ void loop() {
     Serial.print("Tension entrée ESP32: ");
     Serial.print(Tension_GPIO);
     Serial.println(" V");
+
+    Serial.print("Tension batterie: ");
+    Serial.print(Tension_batterie);
+    Serial.println(" V");
+
+    Serial.print("Niveau de batterie: ");
+    Serial.print(pourcentage_batterie);
+    Serial.println(" %");
 
     Serial.print("Température: ");
     Serial.print(temperature);
