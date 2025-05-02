@@ -13,7 +13,7 @@
 #define nb_etat_max 4096.0 //nombre d'état numérique possible pour un converstisseur 12 bits
 #define tensionPin 34 // Broche où est conecté le pont diviseur
 
-//déclaration des variables météo
+//déclaration des variables météorologiques
 float temperature;
 float humidite;
 float quantite_pluie;
@@ -96,6 +96,12 @@ void setup() {
         String response = "{\"temperature\": " + String(temperature, 2) + ", \"humidite\": " + String(humidite, 2) + ", \"pluviometrie\": " + String(quantite_pluie, 2) + "\"}";
         request->send(200, "application/json", response);
     });
+
+    //page en cas d'erreur
+    server.onNotFound([](AsyncWebServerRequest *request){
+        request->send(404, "text/plain", "Not found");
+        Serial.println("erreur 404 détecté");
+    });
     
     //démarage du serveur HTTP
     server.begin();
@@ -103,7 +109,7 @@ void setup() {
     //affichage des informations de l'API
     Serial.println("status de l'api : /status");
     Serial.println("temperature     : /Mesures");
-    Serial.println("Serveur Web au port 200");
+    Serial.println("Serveur Web au port 80");
 
     //fin du code sur l'API
 
