@@ -90,14 +90,14 @@ void setup() {
         String response = "{\"status\": \"ok\", \"ip\": \"" + WiFi.softAPIP().toString() + "\"}";
         request->send(200, "application/json", response); 
     });
-         
+    
     //requete pour avoir la température
     server.on("/Mesures", HTTP_POST, [](AsyncWebServerRequest *request){
-        String response = "{\"temperature\": " + String(temperature, 2) + ", \"humidite\": " + String(humidite, 2) + ", \"pluviometrie\": " + String(quantite_pluie, 2) + "\"}";
+        String response = "{\"temperature\": " + String(temperature, 2) + ", \"humidite\": " + String(humidite, 2) + ", \"pluviometrie\": " + String(quantite_pluie, 2) + "}";
         request->send(200, "application/json", response);
     });
 
-    //page en cas d'erreur
+    //envoi d'une erreur 404 si l'url n'est pas connue
     server.onNotFound([](AsyncWebServerRequest *request){
         request->send(404, "text/plain", "Not found");
         Serial.println("erreur 404 détecté");
@@ -111,7 +111,7 @@ void setup() {
     Serial.println("temperature     : /Mesures");
     Serial.println("Serveur Web au port 80");
 
-    //fin du code sur l'API
+    //fin du code de l'API
 
     dht.begin(); 
     Serial.println("initisalisation terminé");
