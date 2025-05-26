@@ -99,8 +99,7 @@ void setup() {
 
     //envoi d'une erreur 404 si l'url n'est pas connue
     server.onNotFound([](AsyncWebServerRequest *request){
-        request->send(404, "text/plain", "Not found");
-        Serial.println("erreur 404 détecté");
+        request->send(404, "text/plain", "erreur dans l'Url de L'API");
     });
     
     //démarage du serveur HTTP
