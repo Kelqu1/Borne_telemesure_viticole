@@ -93,7 +93,7 @@ void setup() {
     
     //requete pour avoir la température
     server.on("/Mesures", HTTP_POST, [](AsyncWebServerRequest *request){
-        String response = "{\"temperature\": " + String(temperature, 2) + ", \"humidite\": " + String(humidite, 2) + ", \"pluviometrie\": " + String(quantite_pluie, 2) + "}";
+        String response = "{\"temperature\": " + String(temperature, 2) + ", \"humidite\": " + String(humidite, 2) + ", \"pluviometrie\": " + String(quantite_pluie, 2) + ", \"latitude\": 47.730814, \"longitude\": 7.303298}";
         request->send(200, "application/json", response);
     });
 
