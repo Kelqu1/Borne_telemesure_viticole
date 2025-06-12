@@ -4,9 +4,9 @@
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
 
-//CAPTEUR HUMIDITé et TEMPéRATURE
+//CAPTEUR HUMIDITé ET TEMPéRATURE
 #define DHTPIN 19       // Broche où est branché le DHT22
-#define DHTTYPE DHT22   // Type de capteur
+#define DHTTYPE DHT22   // modèle du capteur
 
 //NIVEAU TENSION
 #define tension_ref 3.3f //tension de reférence pour l'ESP32
@@ -20,11 +20,15 @@ float quantite_pluie;
 float pourcentage_batterie;
 int compteurPluie=0;
 
+//décalages température et humidité
+float decalage_temp=1.0;
+float decalage_humi=-10.3;
+
 //parametres
 DHT dht(DHTPIN, DHTTYPE);
 AsyncWebServer server(80);//serveur HTTP au port 80
 
-//INTERUPTION CAPTEUR PLUVOIMETRIE
+//INTERUPTION CAPTEUR DE PLUVOIMETRIE
 int lastMillis = 0;
 unsigned long previousMillis = 0;
 
@@ -47,7 +51,7 @@ float tensionversPourcentage(float tension) {
     if (tension >= tensions[0]) return 100;
     if (tension <= tensions[N - 1]) return 0;
   
-    // Chercher dans quel intervalle se trouve la tension
+    //Chercher dans quel intervalle se trouve la tension
     for (int i = 0; i < N - 1; i++) {
       float v1 = tensions[i];
       float v2 = tensions[i + 1];
@@ -56,13 +60,13 @@ float tensionversPourcentage(float tension) {
         float p1 = pourcentages[i];
         float p2 = pourcentages[i + 1];
   
-        // linéarisation dans l’intervalle [v2, v1]
+        //Linéarisation dans l’intervalle
         float pourcent = p1 + (p2 - p1) * (tension - v1) / (v2 - v1);
         return pourcent;
       }
     }
   
-    return -1; // en cas d'erreur
+    return -1; //en cas d'erreur
   }
 
 //debut code de yanis
@@ -76,11 +80,11 @@ void setup() {
     Serial.print("Adresse IP: ");
     Serial.println(WiFi.softAPIP());
     //fin code de yanis
-    //debut code hugo
+    //debut code de hugo
 
     //CAPTEUR PLUVIOMETRIE
 
-    // définir l'interruption 
+    //définir l'interruption 
     attachInterrupt(digitalPinToInterrupt(21), handleInterrupt, RISING);
 
     //PARTIE API 
@@ -91,7 +95,7 @@ void setup() {
         request->send(200, "application/json", response); 
     });
     
-    //requete pour avoir la température
+    //requete pour avoir les mesures
     server.on("/Mesures", HTTP_POST, [](AsyncWebServerRequest *request){
         String response = "{\"temperature\": " + String(temperature, 2) + ", \"humidite\": " + String(humidite, 2) + ", \"pluviometrie\": " + String(quantite_pluie, 2) + ", \"latitude\": 47.730814, \"longitude\": 7.303298}";
         request->send(200, "application/json", response);
@@ -106,14 +110,14 @@ void setup() {
     server.begin();
     
     //affichage des informations de l'API
-    Serial.println("status de l'api : /status");
-    Serial.println("temperature     : /Mesures");
-    Serial.println("Serveur Web au port 80");
+    Serial.println("le status de l'api : /status");
+    Serial.println("les mesures : /Mesures");
+    Serial.println("API est au port 80");
 
     //fin du code de l'API
 
     dht.begin(); 
-    Serial.println("initisalisation terminé");
+    Serial.println("l'initisalisation est terminé");
     Serial.println("-----------------------------");
 }
 
@@ -135,8 +139,8 @@ void loop() {
     //CAPTEUR HUMIDITé ET TEMPERATURE
     
     // Lecture de la température en °C
-    temperature = dht.readTemperature(); // Lecture de la température en °C
-    humidite = dht.readHumidity(); // Lecture de l'humidité en %
+    temperature = dht.readTemperature()+decalage_temp; // Lecture de la température en °C
+    humidite = dht.readHumidity()+decalage_humi; // Lecture de l'humidité en %
 
     //affichage d'une erreur pour le DHT au besoin 
     if (isnan(temperature) || isnan(humidite)) {
